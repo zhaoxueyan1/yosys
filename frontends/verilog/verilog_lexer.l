@@ -180,9 +180,19 @@ static bool isUserType(std::string &s)
 	while (*p != 0 && *p != ' ' && *p != '\t') p++;
 	while (*p == ' ' || *p == '\t') p++;
 	if (!strcmp(p, "none"))
-		VERILOG_FRONTEND::default_nettype_wire = false;
-	else if (!strcmp(p, "wire"))
-		VERILOG_FRONTEND::default_nettype_wire = true;
+		VERILOG_FRONTEND::default_nettype = ID::none;
+	else if (!strcmp(p, "wire") || !strcmp(p, "tri"))
+		VERILOG_FRONTEND::default_nettype = ID::wire;
+	else if (!strcmp(p, "wor") || !strcmp(p, "trior"))
+		VERILOG_FRONTEND::default_nettype = ID::wor;
+	else if (!strcmp(p, "wand") || !strcmp(p, "triand"))
+		VERILOG_FRONTEND::default_nettype = ID::wand;
+	else if (!strcmp(p, "tri0"))
+		VERILOG_FRONTEND::default_nettype = ID::tri0;
+	else if (!strcmp(p, "tri1"))
+		VERILOG_FRONTEND::default_nettype = ID::tri1;
+	else if (!strcmp(p, "uwire"))
+		VERILOG_FRONTEND::default_nettype = ID::uwire;
 	else
 		frontend_verilog_yyerror("Unsupported default nettype: %s", p);
 }
@@ -278,6 +288,12 @@ static bool isUserType(std::string &s)
 "wor"     { return TOK_WOR; }
 "wand"    { return TOK_WAND; }
 "reg"     { return TOK_REG; }
+"tri"     { return TOK_TRI; }
+"trior"   { return TOK_TRIOR; }
+"triand"  { return TOK_TRIAND; }
+"tri0"    { return TOK_TRI0; }
+"tri1"    { return TOK_TRI1; }
+"uwire"   { return TOK_UWIRE; }
 "integer" { return TOK_INTEGER; }
 "signed"  { return TOK_SIGNED; }
 "unsigned" { SV_KEYWORD(TOK_UNSIGNED); }

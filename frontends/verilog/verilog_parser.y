@@ -63,7 +63,7 @@ namespace VERILOG_FRONTEND {
 	int current_function_or_task_port_id;
 	std::vector<char> case_type_stack;
 	bool do_not_require_port_stubs;
-	bool default_nettype_wire;
+	IdString default_nettype;
 	bool sv_mode, formal_mode, lib_mode, specify_mode;
 	bool noassert_mode, noassume_mode, norestrict_mode;
 	bool assume_asserts_mode, assert_assumes_mode;
@@ -265,6 +265,7 @@ static void rewriteAsMemoryNode(AstNode *node, AstNode *rangeNode)
 %token TOK_PACKAGE TOK_ENDPACKAGE TOK_PACKAGESEP
 %token TOK_INTERFACE TOK_ENDINTERFACE TOK_MODPORT TOK_VAR TOK_WILDCARD_CONNECT
 %token TOK_INPUT TOK_OUTPUT TOK_INOUT TOK_WIRE TOK_WAND TOK_WOR TOK_REG TOK_LOGIC
+%token TOK_TRI TOK_TRIOR TOK_TRIAND TOK_TRI0 TOK_TRI1 TOK_UWIRE
 %token TOK_INTEGER TOK_SIGNED TOK_ASSIGN TOK_PLUS_ASSIGN TOK_ALWAYS TOK_INITIAL
 %token TOK_ALWAYS_FF TOK_ALWAYS_COMB TOK_ALWAYS_LATCH
 %token TOK_BEGIN TOK_END TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_REPEAT
@@ -656,16 +657,33 @@ wire_type_token:
 	TOK_WIRE {
 	} |
 	TOK_WOR {
-		astbuf3->is_wor = true;
+		astbuf3->driver_resolution = ID::wor;
 	} |
 	TOK_WAND {
-		astbuf3->is_wand = true;
+		astbuf3->driver_resolution = ID::wand;
 	} |
 	TOK_REG {
 		astbuf3->is_reg = true;
 	} |
 	TOK_LOGIC {
 		astbuf3->is_logic = true;
+	} |
+	TOK_TRI {
+	} |
+	TOK_TRIOR {
+		astbuf3->driver_resolution = ID::wor;
+	} |
+	TOK_TRIAND {
+		astbuf3->driver_resolution = ID::wand;
+	} |
+	TOK_TRI0 {
+		astbuf3->driver_resolution = ID::tri0;
+	} |
+	TOK_TRI1 {
+		astbuf3->driver_resolution = ID::tri1;
+	} |
+	TOK_UWIRE {
+		astbuf3->driver_resolution = ID::uwire;
 	} |
 	TOK_VAR {
 		astbuf3->is_logic = true;

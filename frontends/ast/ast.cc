@@ -46,7 +46,8 @@ namespace AST {
 // instantiate global variables (private API)
 namespace AST_INTERNAL {
 	bool flag_dump_ast1, flag_dump_ast2, flag_no_dump_ptr, flag_dump_vlog1, flag_dump_vlog2, flag_dump_rtlil, flag_nolatches, flag_nomeminit;
-	bool flag_nomem2reg, flag_mem2reg, flag_noblackbox, flag_lib, flag_nowb, flag_noopt, flag_icells, flag_pwires, flag_autowire;
+	bool flag_nomem2reg, flag_mem2reg, flag_noblackbox, flag_lib, flag_nowb, flag_noopt, flag_icells, flag_pwires;
+	IdString flag_autowire;
 	AstNode *current_ast, *current_ast_mod;
 	std::map<std::string, AstNode*> current_scope;
 	const dict<RTLIL::SigBit, RTLIL::SigBit> *genRTLIL_subst_ptr = NULL;
@@ -211,8 +212,6 @@ AstNode::AstNode(AstNodeType type, AstNode *child1, AstNode *child2, AstNode *ch
 	is_signed = false;
 	is_string = false;
 	is_enum = false;
-	is_wand = false;
-	is_wor = false;
 	is_unsized = false;
 	was_checked = false;
 	range_valid = false;
@@ -221,6 +220,7 @@ AstNode::AstNode(AstNodeType type, AstNode *child1, AstNode *child2, AstNode *ch
 	port_id = 0;
 	range_left = -1;
 	range_right = 0;
+	driver_resolution = ID::wire;
 	integer = 0;
 	realvalue = 0;
 	id2ast = NULL;
@@ -1171,7 +1171,7 @@ static AstModule* process_module(AstNode *ast, bool defer, AstNode *original_ast
 
 // create AstModule instances for all modules in the AST tree and add them to 'design'
 void AST::process(RTLIL::Design *design, AstNode *ast, bool dump_ast1, bool dump_ast2, bool no_dump_ptr, bool dump_vlog1, bool dump_vlog2, bool dump_rtlil,
-		bool nolatches, bool nomeminit, bool nomem2reg, bool mem2reg, bool noblackbox, bool lib, bool nowb, bool noopt, bool icells, bool pwires, bool nooverwrite, bool overwrite, bool defer, bool autowire)
+		bool nolatches, bool nomeminit, bool nomem2reg, bool mem2reg, bool noblackbox, bool lib, bool nowb, bool noopt, bool icells, bool pwires, bool nooverwrite, bool overwrite, bool defer, IdString autowire)
 {
 	current_ast = ast;
 	current_ast_mod = nullptr;

@@ -1085,8 +1085,8 @@ RTLIL::SigSpec AstNode::genRTLIL(int width_hint, bool sign_hint)
 				wire->attributes[attr.first] = attr.second->asAttrConst();
 			}
 
-			if (is_wand) wire->set_bool_attribute(ID::wand);
-			if (is_wor)  wire->set_bool_attribute(ID::wor);
+			if (driver_resolution != ID::wire)
+				wire->set_string_attribute(ID::driver_resolution, driver_resolution.str());
 		}
 		break;
 
@@ -1162,8 +1162,11 @@ RTLIL::SigSpec AstNode::genRTLIL(int width_hint, bool sign_hint)
 				RTLIL::Wire *wire = current_module->addWire(str);
 				wire->attributes[ID::src] = stringf("%s:%d.%d-%d.%d", filename.c_str(), location.first_line, location.first_column, location.last_line, location.last_column);
 				wire->name = str;
-				if (flag_autowire)
-					log_file_warning(filename, location.first_line, "Identifier `%s' is implicitly declared.\n", str.c_str());
+				if (flag_autowire != ID::none && flag_autowire != ID::wire)
+					wire->attributes[ID::driver_resolution] = flag_autowire.str();
+
+				if (flag_autowire != ID::none)
+					log_file_warning(filename, location.first_line, "Identifier `%s' is implicitly declared as %s.\n", str.c_str(), RTLIL::unescape_id(flag_autowire).c_str());
 				else
 					log_file_error(filename, location.first_line, "Identifier `%s' is implicitly declared and `default_nettype is set to none.\n", str.c_str());
 			}

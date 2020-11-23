@@ -267,7 +267,7 @@ struct VerilogFrontend : public Frontend {
 		assume_asserts_mode = false;
 		lib_mode = false;
 		specify_mode = false;
-		default_nettype_wire = true;
+		default_nettype = ID::wire;
 
 		args.insert(args.begin()+1, verilog_defaults.begin(), verilog_defaults.end());
 
@@ -410,7 +410,7 @@ struct VerilogFrontend : public Frontend {
 				continue;
 			}
 			if (arg == "-noautowire") {
-				default_nettype_wire = false;
+				default_nettype = ID::none;
 				continue;
 			}
 			if (arg == "-setattr" && argidx+1 < args.size()) {
@@ -488,7 +488,7 @@ struct VerilogFrontend : public Frontend {
 			error_on_dpi_function(current_ast);
 
 		AST::process(design, current_ast, flag_dump_ast1, flag_dump_ast2, flag_no_dump_ptr, flag_dump_vlog1, flag_dump_vlog2, flag_dump_rtlil, flag_nolatches,
-				flag_nomeminit, flag_nomem2reg, flag_mem2reg, flag_noblackbox, lib_mode, flag_nowb, flag_noopt, flag_icells, flag_pwires, flag_nooverwrite, flag_overwrite, flag_defer, default_nettype_wire);
+				flag_nomeminit, flag_nomem2reg, flag_mem2reg, flag_noblackbox, lib_mode, flag_nowb, flag_noopt, flag_icells, flag_pwires, flag_nooverwrite, flag_overwrite, flag_defer, default_nettype);
 
 
 		if (!flag_nopp)

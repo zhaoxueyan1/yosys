@@ -1173,7 +1173,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
 	// (iterate by index as e.g. auto wires can add new children in the process)
 	for (size_t i = 0; i < children.size(); i++) {
 		bool did_something_here = true;
-		bool backup_flag_autowire = flag_autowire;
+		IdString backup_flag_autowire = flag_autowire;
 		if ((type == AST_GENFOR || type == AST_FOR) && i >= 3)
 			break;
 		if ((type == AST_GENIF || type == AST_GENCASE) && i >= 1)
@@ -1185,7 +1185,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
 		if (type == AST_PREFIX && i >= 1)
 			break;
 		if (type == AST_DEFPARAM && i == 0)
-			flag_autowire = true;
+			flag_autowire = ID::wire;
 		while (did_something_here && i < children.size()) {
 			bool const_fold_here = const_fold, in_lvalue_here = in_lvalue;
 			int width_hint_here = width_hint;
@@ -1654,7 +1654,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
 		if (current_scope.count(str) == 0) {
 			if (current_ast_mod == nullptr) {
 				log_file_error(filename, location.first_line, "Identifier `%s' is implicitly declared outside of a module.\n", str.c_str());
-			} else if (flag_autowire || str == "\\$global_clock") {
+			} else if (flag_autowire != ID::none || str == "\\$global_clock") {
 				AstNode *auto_wire = new AstNode(AST_AUTOWIRE);
 				auto_wire->str = str;
 				current_ast_mod->children.push_back(auto_wire);

@@ -1090,11 +1090,12 @@ struct HierarchyPass : public Pass {
 
 			for (auto wire : module->wires())
 			{
-				if (wire->get_bool_attribute(ID::wand)) {
+				IdString driver_resolution = wire->get_string_attribute(ID::driver_resolution);
+				if (driver_resolution == ID::wand) {
 					wand_map[wire] = SigSpec();
 					wand_wor_index.insert(wire);
 				}
-				if (wire->get_bool_attribute(ID::wor)) {
+				if (driver_resolution == ID::wor) {
 					wor_map[wire] = SigSpec();
 					wand_wor_index.insert(wire);
 				}

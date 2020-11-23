@@ -53,7 +53,7 @@ namespace VERILOG_FRONTEND
 	extern dict<std::string, AST::AstNode*> pkg_user_types;
 
 	// state of `default_nettype
-	extern bool default_nettype_wire;
+	extern IdString default_nettype;
 
 	// running in SystemVerilog mode
 	extern bool sv_mode;
