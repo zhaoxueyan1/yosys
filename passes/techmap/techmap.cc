@@ -430,6 +430,19 @@ struct TechmapWorker
 		TopoSort<RTLIL::Cell*, IdString::compare_ptr_by_name<RTLIL::Cell>> cells;
 		dict<RTLIL::Cell*, pool<RTLIL::SigBit>> cell_to_inbit;
 		dict<RTLIL::SigBit, pool<RTLIL::Cell*>> outbit_to_cell;
+		pool<RTLIL::SigBit> used_sigbits;
+
+		for (auto cell : module->cells())
+		{
+			// Find which sigbits are used, for the purpose of _TECHMAP_WIREUSED_*_
+			for (auto &conn : cell->connections())
+			{
+				if (!cell->input(conn.first))
+					continue;
+				for (auto bit : sigmap(conn.second))
+					used_sigbits.insert(bit);
+			}
+		}
 
 		for (auto cell : module->selected_cells())
 		{
@@ -650,6 +663,12 @@ struct TechmapWorker
 					}
 					if (tpl->avail_parameters.count(stringf("\\_TECHMAP_WIREINIT_%s_", log_id(conn.first))) != 0) {
 						parameters.emplace(stringf("\\_TECHMAP_WIREINIT_%s_", log_id(conn.first)), initvals(conn.second));
+					}
+					if (tpl->avail_parameters.count(stringf("\\_TECHMAP_WIREUSED_%s_", log_id(conn.first))) != 0) {
+						std::vector<RTLIL::SigBit> v = sigmap(conn.second).to_sigbit_vector();
+						for (auto &bit : v)
+							bit = RTLIL::SigBit(used_sigbits.count(bit) ? RTLIL::State::S1 : RTLIL::State::S0);
+						parameters.emplace(stringf("\\_TECHMAP_WIREUSED_%s_", log_id(conn.first)), RTLIL::SigSpec(v).as_const());
 					}
 				}
 
@@ -1113,6 +1132,10 @@ struct TechmapPass : public Pass {
 		log("        attribute. If the attribute doesn't exist, x will be filled for the\n");
 		log("        missing bits.  To remove the init attribute bits used, use the\n");
 		log("        _TECHMAP_REMOVEINIT_*_ wires.\n");
+		log("\n");
+		log("    _TECHMAP_WIREUSED_<port-name>_\n");
+		log("        When a parameter with this name exists, each bit will be set to 1 if\n");
+		log("        that bit of the corresponding port is used and not dangling.\n");
 		log("\n");
 		log("    _TECHMAP_BITS_CONNMAP_\n");
 		log("    _TECHMAP_CONNMAP_<port-name>_\n");
