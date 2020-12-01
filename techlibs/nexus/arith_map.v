@@ -27,6 +27,9 @@ module _80_nexus_alu (A, B, CI, BI, X, Y, CO);
 	parameter Y_WIDTH = 1;
 
 	(* force_downto *)
+	parameter [Y_WIDTH-1:0] _TECHMAP_WIREUSED_CO_ = 0;
+
+	(* force_downto *)
 	input [A_WIDTH-1:0] A;
 	(* force_downto *)
 	input [B_WIDTH-1:0] B;
@@ -76,21 +79,50 @@ module _80_nexus_alu (A, B, CI, BI, X, Y, CO);
 	);
 
 	generate for (i = 0; i < Y_WIDTH2; i = i + 2) begin:slice
-		CCU2 #(
-			.INIT0("0x96AA"),
-			.INIT1("0x96AA"),
-			.INJECT("NO")
-		) ccu2c_i (
-			.CIN(FCO[i]),
-			.A0(AA[i]), .B0(BX[i]), .C0(BI), .D0(1'b1),
-			.A1(AA[i+1]), .B1(BX[i+1]), .C1(BI), .D1(1'b1),
-			.S0(Y[i]), .S1(Y1[i]),
-			.COUT(FCO[i+2])
-		);
+		wire fco;
+		if (_TECHMAP_WIREUSED_CO_[i] || ((i < Y_WIDTH) && _TECHMAP_WIREUSED_CO_[i + 1])) begin: co_feedout
+			// Lower CO bit used
+			wire co_int_0, co_int_1, fci_int;
+			CCU2 #(
+				.INIT0("0x96AA"),
+				.INIT1("0xFFAA"),
+				.INJECT("NO")
+			) ccu2c_feedout_0 (
+				.CIN(FCO[i]),
+				.A0(AA[i]), .B0(BX[i]), .C0(BI), .D0(1'b1),
+				.A1(1'b1), .B1(1'b1), .C1(1'b1), .D1(1'b1),
+				.S0(Y[i]), .S1(co_int_0),
+				.COUT(fci_int)
+			);
+			CCU2 #(
+				.INIT0("0x96AA"),
+				.INIT1("0xFFAA"),
+				.INJECT("NO")
+			) ccu2c_feedout_1 (
+				.CIN(fci_int),
+				.A0(AA[i+1]), .B0(BX[i+1]), .C0(BI), .D0(1'b1),
+				.A1(1'b1), .B1(1'b1), .C1(1'b1), .D1(1'b1),
+				.S0(Y1[i]), .S1(co_int_1),
+				.COUT(FCO[i+2])
+			);
+			assign CO[i] = ~co_int_0;
+			if (i+1 < Y_WIDTH)
+				assign CO[i+1] = ~co_int_1;
+		end else begin
+			CCU2 #(
+				.INIT0("0x96AA"),
+				.INIT1("0x96AA"),
+				.INJECT("NO")
+			) ccu2c_i (
+				.CIN(FCO[i]),
+				.A0(AA[i]), .B0(BX[i]), .C0(BI), .D0(1'b1),
+				.A1(AA[i+1]), .B1(BX[i+1]), .C1(BI), .D1(1'b1),
+				.S0(Y[i]), .S1(Y1[i]),
+				.COUT(FCO[i+2])
+			);
+		end
 
-		assign CO[i] = (AA[i] && BB[i]) || (((i == 0) ? CI : CO[i-1]) && (AA[i] || BB[i]));
 		if (i+1 < Y_WIDTH) begin
-			assign CO[i+1] = (AA[i+1] && BB[i+1]) || (CO[i] && (AA[i+1] || BB[i+1]));
 			assign Y[i+1] = Y1[i];
 		end
 	end endgenerate
