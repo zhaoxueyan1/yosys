@@ -22,6 +22,7 @@
 #include "kernel/sigtools.h"
 #include "kernel/modtools.h"
 #include "kernel/mem.h"
+#include "kernel/ffinit.h"
 
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
@@ -32,6 +33,7 @@ struct MemoryShareWorker
 	RTLIL::Module *module;
 	SigMap sigmap, sigmap_xmux;
 	ModWalker modwalker;
+	FfInitVals initvals;
 	CellTypes cone_ct;
 	bool flag_widen;
 
@@ -107,8 +109,6 @@ struct MemoryShareWorker
 					continue;
 				if (port1.ce_over_srst != port2.ce_over_srst)
 					continue;
-				if (port1.transparent != port2.transparent)
-					continue;
 				// If the width of the ports doesn't match, they can still be
 				// merged by widening the narrow one.  Check if the conditions
 				// hold for that.
@@ -148,8 +148,10 @@ struct MemoryShareWorker
 					continue;
 				if (!merge_rst_value(mem, srst_value, wide_log2, port1.srst_value, sub1, port2.srst_value, sub2))
 					continue;
+				// At this point we are committed to the merge.
 				{
 					log("  Merging ports %d, %d (address %s).\n", i, j, log_signal(port1.addr));
+					mem.prepare_rd_merge(i, j, &initvals);
 					mem.widen_prep(wide_log2);
 					SigSpec new_data = module->addWire(NEW_ID, mem.width << wide_log2);
 					module->connect(port1.data, new_data.extract(sub1 * mem.width, mem.width << port1.wide_log2));
@@ -232,7 +234,7 @@ struct MemoryShareWorker
 						continue;
 				}
 				log("  Merging ports %d, %d (address %s).\n", i, j, log_signal(port1.addr));
-				mem.prepare_wr_merge(i, j);
+				mem.prepare_wr_merge(i, j, &initvals);
 				port1.addr = sigmap_xmux(port1.addr);
 				port2.addr = sigmap_xmux(port2.addr);
 				mem.widen_wr_port(i, wide_log2);
@@ -430,7 +432,7 @@ struct MemoryShareWorker
 					}
 
 					log("  Merging port %d into port %d.\n", idx2, idx1);
-					mem.prepare_wr_merge(idx1, idx2);
+					mem.prepare_wr_merge(idx1, idx2, &initvals);
 					port_to_sat_variable.at(idx1) = ez->OR(port_to_sat_variable.at(idx1), port_to_sat_variable.at(idx2));
 
 					RTLIL::SigSpec last_addr = port1.addr;
@@ -492,6 +494,7 @@ struct MemoryShareWorker
 
 		this->module = module;
 		sigmap.set(module);
+		initvals.set(&sigmap, module);
 
 		sigmap_xmux = sigmap;
 		for (auto cell : module->cells())
